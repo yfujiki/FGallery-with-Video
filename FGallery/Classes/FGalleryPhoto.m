@@ -7,6 +7,9 @@
 //
 
 #import "FGalleryPhoto.h"
+#import "ASIHTTPRequest.h"
+#import "ASIDownloadCache.h"
+#import "Reachability.h"
 
 @interface FGalleryPhoto (Private)
 
@@ -73,9 +76,44 @@
 		
 		_isThumbLoading = YES;
 		
-		NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:_thumbUrl]];
-		_thumbConnection = [NSURLConnection connectionWithRequest:request delegate:self];
-		_thumbData = [[NSMutableData alloc] init];
+//		NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:_thumbUrl]];
+//		_thumbConnection = [NSURLConnection connectionWithRequest:request delegate:self];
+//		_thumbData = [[NSMutableData alloc] init];
+        
+        if(![[Reachability reachabilityForInternetConnection] isReachable])
+        {
+            NSData * responseData = [[ASIDownloadCache sharedCache] cachedResponseDataForURL:[NSURL URLWithString:_thumbUrl]];
+            _thumbnail = [UIImage imageWithData:responseData];    
+            _isThumbLoading = NO;
+            _hasThumbLoaded = YES;
+            
+            if(_delegate)
+                [self didLoadThumbnail];
+            
+            return;
+        }
+        
+        __unsafe_unretained ASIHTTPRequest * request = [ASIHTTPRequest requestWithURL:[NSURL URLWithString:_thumbUrl]];
+        
+        [request setDownloadCache:[ASIDownloadCache sharedCache]];
+        [request setCachePolicy:ASIOnlyLoadIfNotCachedCachePolicy];
+        
+        [request setCompletionBlock:^{
+            NSData * responseData = [request responseData];
+            _thumbnail = [UIImage imageWithData:responseData];
+            _isThumbLoading = NO;
+            _hasThumbLoaded = YES;
+            
+            // notify delegate
+            if( _delegate ) 
+            	[self didLoadThumbnail];
+        }];
+        [request setFailedBlock:^{
+            NSLog(@"Failed to load thumbnail image : %@", [request.error localizedDescription]);
+            _isThumbLoading = NO;            
+        }];
+        
+        [request startAsynchronous];
 	}
 	
 	// load from disk
@@ -103,9 +141,44 @@
 		
 		_isFullsizeLoading = YES;
 		
-		NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:_fullsizeUrl]];
-		_fullsizeConnection = [NSURLConnection connectionWithRequest:request delegate:self];
-		_fullsizeData = [[NSMutableData alloc] init];
+//		NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:_fullsizeUrl]];
+//		_fullsizeConnection = [NSURLConnection connectionWithRequest:request delegate:self];
+//		_fullsizeData = [[NSMutableData alloc] init];
+        if(![[Reachability reachabilityForInternetConnection] isReachable])
+        {
+            NSData * responseData = [[ASIDownloadCache sharedCache] cachedResponseDataForURL:[NSURL URLWithString:_fullsizeUrl]];
+            _fullsize = [UIImage imageWithData:responseData];        
+            _isFullsizeLoading = NO;
+            _hasFullsizeLoaded = YES;
+            
+            if(_delegate)
+                [self didLoadFullsize];
+            
+            return;
+        }
+        
+        __unsafe_unretained ASIHTTPRequest * request = [ASIHTTPRequest requestWithURL:[NSURL URLWithString:_fullsizeUrl]];
+        
+        [request setDownloadCache:[ASIDownloadCache sharedCache]];
+        [request setCachePolicy:ASIOnlyLoadIfNotCachedCachePolicy];
+        
+        [request setCompletionBlock:^{
+            NSData * responseData = [request responseData];
+            _fullsize = [UIImage imageWithData:responseData];
+            _isFullsizeLoading = NO;
+            _hasFullsizeLoaded = YES;
+            
+            // notify delegate
+            if( _delegate ) 
+            	[self didLoadFullsize];
+        }];
+        [request setFailedBlock:^{
+            NSLog(@"Failed to load full size image : %@", [request.error localizedDescription]);
+            _isFullsizeLoading = NO;
+        }];
+        
+        [request startAsynchronous];
+
 	}
 	else
 	{
@@ -171,75 +244,6 @@
 	_hasThumbLoaded = NO;
 	
 	_thumbnail = nil;
-}
-
-
-#pragma mark -
-#pragma mark NSURLConnection Delegate Methods
-
-
-- (void)connection:(NSURLConnection *)conn didReceiveResponse:(NSURLResponse *)response {
-	
-	if( conn == _thumbConnection )
-		[_thumbData setLength:0];
-	
-    else if( conn == _fullsizeConnection )
-		[_fullsizeData setLength:0];
-	
-	[[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
-}
-
-
-
-- (void)connection:(NSURLConnection *)conn didReceiveData:(NSData *)data 
-{
-	if( conn == _thumbConnection )
-		[_thumbData appendData:data];
-	
-    else if( conn == _fullsizeConnection )
-		[_fullsizeData appendData:data];
-	
-	[[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
-}
-
-
-
-- (void)connectionDidFinishLoading:(NSURLConnection *)conn 
-{	
-	if( conn == _thumbConnection )
-	{
-		_isThumbLoading = NO;
-		_hasThumbLoaded = YES;
-		
-		// create new image with data
-		_thumbnail = [[UIImage alloc] initWithData:_thumbData];
-		
-		// cleanup 
-		[self killThumbnailLoadObjects];
-		
-		// notify delegate
-		if( _delegate ) 
-			[self didLoadThumbnail];
-	}
-    else if( conn == _fullsizeConnection )
-	{
-		_isFullsizeLoading = NO;
-		_hasFullsizeLoaded = YES;
-		
-		// create new image with data
-		_fullsize = [[UIImage alloc] initWithData:_fullsizeData];
-		
-		// cleanup 
-		[self killFullsizeLoadObjects];
-		
-		// notify delegate
-		if( _delegate )
-			[self didLoadFullsize];
-	}
-	
-	// turn off data indicator
-	if( !_isFullsizeLoading && !_isThumbLoading ) 
-		[[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
 }
 
 #pragma mark -

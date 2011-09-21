@@ -26,7 +26,29 @@
 		77FCB8BD12D7936A00AAAFF3 /* audi.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 77FCB8BC12D7936A00AAAFF3 /* audi.jpg */; };
 		77FCB8C912D793E100AAAFF3 /* hawaii.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 77FCB8C812D793E100AAAFF3 /* hawaii.jpeg */; };
 		77FCB8D012D794C000AAAFF3 /* lava.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 77FCB8CF12D794C000AAAFF3 /* lava.jpeg */; };
+		80CD673B142A3C58003852A9 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80CD673A142A3C58003852A9 /* SystemConfiguration.framework */; };
+		80CD673D142A3C5E003852A9 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80CD673C142A3C5E003852A9 /* MobileCoreServices.framework */; };
+		80CD673F142A3C81003852A9 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80CD673E142A3C81003852A9 /* CFNetwork.framework */; };
+		80CD6740142A3C8A003852A9 /* libASIHttpRequest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 80CD6737142A3C44003852A9 /* libASIHttpRequest.a */; };
+		80CD6742142A3C93003852A9 /* libz.1.2.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 80CD6741142A3C93003852A9 /* libz.1.2.5.dylib */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		80CD6736142A3C44003852A9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 80CD672E142A3C44003852A9 /* ASIHttpRequest.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F9F9AC9113E30DBC001E2B5D;
+			remoteInfo = ASIHttpRequest;
+		};
+		80CD6738142A3C44003852A9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 80CD672E142A3C44003852A9 /* ASIHttpRequest.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F9F9ACA113E30DBC001E2B5D;
+			remoteInfo = ASIHttpRequestTests;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		1D30AB110D05D00D00671497 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -55,6 +77,11 @@
 		77FCB8BC12D7936A00AAAFF3 /* audi.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = audi.jpg; sourceTree = "<group>"; };
 		77FCB8C812D793E100AAAFF3 /* hawaii.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = hawaii.jpeg; sourceTree = "<group>"; };
 		77FCB8CF12D794C000AAAFF3 /* lava.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = lava.jpeg; sourceTree = "<group>"; };
+		80CD672E142A3C44003852A9 /* ASIHttpRequest.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ASIHttpRequest.xcodeproj; path = ../ASIHttpRequest/ASIHttpRequest.xcodeproj; sourceTree = "<group>"; };
+		80CD673A142A3C58003852A9 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		80CD673C142A3C5E003852A9 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
+		80CD673E142A3C81003852A9 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		80CD6741142A3C93003852A9 /* libz.1.2.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.2.5.dylib; path = usr/lib/libz.1.2.5.dylib; sourceTree = SDKROOT; };
 		8D1107310486CEB800E47090 /* FGallery-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "FGallery-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -63,6 +90,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80CD6742142A3C93003852A9 /* libz.1.2.5.dylib in Frameworks */,
+				80CD6740142A3C8A003852A9 /* libASIHttpRequest.a in Frameworks */,
+				80CD673F142A3C81003852A9 /* CFNetwork.framework in Frameworks */,
+				80CD673D142A3C5E003852A9 /* MobileCoreServices.framework in Frameworks */,
+				80CD673B142A3C58003852A9 /* SystemConfiguration.framework in Frameworks */,
 				1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */,
 				1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */,
 				2892E4100DC94CBA00A64D0F /* CoreGraphics.framework in Frameworks */,
@@ -101,6 +133,7 @@
 		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
 			isa = PBXGroup;
 			children = (
+				80CD672E142A3C44003852A9 /* ASIHttpRequest.xcodeproj */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -137,6 +170,10 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				80CD6741142A3C93003852A9 /* libz.1.2.5.dylib */,
+				80CD673E142A3C81003852A9 /* CFNetwork.framework */,
+				80CD673C142A3C5E003852A9 /* MobileCoreServices.framework */,
+				80CD673A142A3C58003852A9 /* SystemConfiguration.framework */,
 				1DF5F4DF0D08C38300B7A737 /* UIKit.framework */,
 				1D30AB110D05D00D00671497 /* Foundation.framework */,
 				2892E40F0DC94CBA00A64D0F /* CoreGraphics.framework */,
@@ -153,6 +190,15 @@
 				77FCB8BC12D7936A00AAAFF3 /* audi.jpg */,
 			);
 			name = "Gallery Images";
+			sourceTree = "<group>";
+		};
+		80CD672F142A3C44003852A9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				80CD6737142A3C44003852A9 /* libASIHttpRequest.a */,
+				80CD6739142A3C44003852A9 /* ASIHttpRequestTests.octest */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -193,12 +239,35 @@
 			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* CustomTemplate */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 80CD672F142A3C44003852A9 /* Products */;
+					ProjectRef = 80CD672E142A3C44003852A9 /* ASIHttpRequest.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				1D6058900D05DD3D006BFB54 /* FGallery */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		80CD6737142A3C44003852A9 /* libASIHttpRequest.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libASIHttpRequest.a;
+			remoteRef = 80CD6736142A3C44003852A9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		80CD6739142A3C44003852A9 /* ASIHttpRequestTests.octest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = ASIHttpRequestTests.octest;
+			remoteRef = 80CD6738142A3C44003852A9 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1D60588D0D05DD3D006BFB54 /* Resources */ = {
@@ -275,10 +344,11 @@
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "../ASIHttpRequest/**";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
 				PREBINDING = NO;
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "DA88780D-63B2-49CD-8CF3-78D984BAA285";
-				SDKROOT = iphoneos4.2;
+				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
@@ -290,6 +360,7 @@
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "../ASIHttpRequest/**";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
 				PREBINDING = NO;
