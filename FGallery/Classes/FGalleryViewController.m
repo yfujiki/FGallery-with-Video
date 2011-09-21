@@ -50,8 +50,14 @@
 - (void)loadAllThumbViewPhotos;
 
 - (void)preloadThumbnailImages;
+
+- (void)fadeOutThumbView;
+- (void)fadeInThumbView;
+- (void)fadeOutInnerContainer;
+- (void)fadeInInnerContainer;
 - (void)curlThumbView;
 - (void)uncurlThumbView;
+
 - (void)unloadFullsizeImageWithIndex:(NSUInteger)index;
 
 - (void)scrollingHasEnded;
@@ -149,7 +155,8 @@
 		
 		// setup thumbs view
 		_thumbsView.backgroundColor					= [UIColor whiteColor];
-		_thumbsView.hidden							= YES;
+		// _thumbsView.hidden							= YES;
+        _thumbsView.alpha                           = 1.0;
 		_thumbsView.contentInset					= UIEdgeInsetsMake( kThumbnailSpacing, kThumbnailSpacing, kThumbnailSpacing, kThumbnailSpacing);
 	}
 	return self;
@@ -205,14 +212,7 @@
 	
 	// set buttons on the toolbar.
 	[_toolbar setItems:_barItems animated:NO];
-	
-	// add top right nav button for thumbs view
-	if( self.navigationController )
-	{
-		UIBarButtonItem *btn = [[[UIBarButtonItem alloc] initWithTitle:@"See All" style:UIBarButtonSystemItemDone target:self action:@selector(handleSeeAllTouch:)] autorelease];
-		[self.navigationItem setRightBarButtonItem:btn animated:YES];
-	}
-	
+		
 	// create layer for the thumbnails
 	_isThumbViewShowing = NO;
 	
@@ -224,6 +224,8 @@
 	
 	// start loading thumbs
 	[self preloadThumbnailImages];
+    
+    [self toggleThumbView];
 }
 
 
@@ -232,11 +234,15 @@
 - (void)viewWillAppear:(BOOL)animated
 {
 //	NSLog(@"<ViewWillAppear>");
-	
 	_isActive = YES;
 	
 	[super viewWillAppear:animated]; // according to docs, we have to call this.
 	
+    _origNavigationBarTranslucent = [self.navigationController.navigationBar isTranslucent];
+    _origNavigationBarTintColor = [self.navigationController.navigationBar tintColor];
+	[self.navigationController.navigationBar setTranslucent:NO];
+    [self.navigationController.navigationBar setTintColor:[UIColor blackColor]];
+    
 	[self layoutViews];
 	
 	// update status bar to be see-through
@@ -249,10 +255,14 @@
 
 - (void)viewWillDisappear:(BOOL)animated
 {
+    
 	_isActive = NO;
 	
 	[super viewWillDisappear:animated];
 	
+    [self.navigationController.navigationBar setTranslucent:_origNavigationBarTranslucent];
+    [self.navigationController.navigationBar setTintColor:_origNavigationBarTintColor];
+    
 	[[UIApplication sharedApplication] setStatusBarStyle:_prevStatusStyle animated:animated];
 }
 
@@ -384,6 +394,8 @@
 	
 	[self layoutButtons];
 	
+    [self loadAllThumbViewPhotos];
+    
 	[self arrangeThumbs];
 	
 	[self moveScrollerToCurrentIndexWithAnimation:NO];
@@ -456,7 +468,7 @@
 	_isFullscreen = YES;
 	
 	[self disableApp];
-	
+    
 	UIApplication* application = [UIApplication sharedApplication];
 	if ([application respondsToSelector: @selector(setStatusBarHidden:withAnimation:)]) {
 		[[UIApplication sharedApplication] setStatusBarHidden: YES withAnimation: UIStatusBarAnimationFade]; // 3.2+
@@ -573,7 +585,10 @@
 
 - (void)updateTitle
 {
-	[self setTitle:[NSString stringWithFormat:@"%i of %i", _currentIndex+1, [_photoSource numberOfPhotosForPhotoGallery:self]]];
+    if(!_isThumbViewShowing)
+        [self setTitle:[NSString stringWithFormat:@"%i of %i", _currentIndex+1, [_photoSource numberOfPhotosForPhotoGallery:self]]];
+    else
+        [self setTitle:@"Thumbnails"];
 }
 
 
@@ -629,7 +644,6 @@
 		photoView.photoDelegate = self;
 		[_scroller addSubview:photoView];
 		[_photoViews addObject:photoView];
-		[photoView release];
 	}
 }
 
@@ -646,7 +660,6 @@
 		[thumbView setTag:i];
 		[_thumbsView addSubview:thumbView];
 		[_photoThumbnailViews addObject:thumbView];
-		[thumbView release];
 	}
 }
 
@@ -660,7 +673,8 @@
 	NSUInteger i, count = [_photoThumbnailViews count];
 	for (i = 0; i < count; i++) {
 		FGalleryPhotoView *thumbView = [_photoThumbnailViews objectAtIndex:i];
-		[thumbView setBackgroundColor:[UIColor grayColor]];
+		// [thumbView setBackgroundColor:[UIColor grayColor]];
+        [thumbView setBackgroundColor:[UIColor blackColor]];
 		
 		// create new frame
 		thumbView.frame = CGRectMake( dx, dy, kThumbnailSize, kThumbnailSize);
@@ -675,9 +689,12 @@
 			dy += kThumbnailSize + kThumbnailSpacing;
 		}
 	}
-	
+
 	// set the content size of the thumb scroller
-	[_thumbsView setContentSize:CGSizeMake( _thumbsView.frame.size.width - ( kThumbnailSpacing*2 ), dy + kThumbnailSize + kThumbnailSpacing )];
+	//[_thumbsView setContentSize:CGSizeMake( _thumbsView.frame.size.width - ( kThumbnailSpacing*2 ), dy + kThumbnailSize + kThumbnailSpacing )];    
+    [_thumbsView setContentSize:CGSizeMake( _thumbsView.frame.size.width - ( kThumbnailSpacing*2 ), dy)];
+    CGPoint offset = CGPointMake(-1 * _thumbsView.contentInset.left, -1 * _thumbsView.contentInset.top);
+    _thumbsView.contentOffset = offset;
 }
 
 
@@ -688,15 +705,33 @@
 	{
 		_isThumbViewShowing = YES;
 		[self arrangeThumbs];
-		[self uncurlThumbView];
-		[self.navigationItem.rightBarButtonItem setTitle:@"Done"];
+
+		// [self uncurlThumbView];
+        [self fadeInThumbView];
+        [self fadeOutInnerContainer];
+        
+		// [self.navigationItem.rightBarButtonItem setTitle:@"Done"];
+
+        if( self.navigationController )
+        {
+            [self.navigationItem setRightBarButtonItem:nil animated:YES];
+        }
 	}
 	else 
 	{
 		_isThumbViewShowing = NO;
-		[self curlThumbView];
-		[self.navigationItem.rightBarButtonItem setTitle:@"See All"];
+        
+		// [self curlThumbView];
+        [self fadeOutThumbView];
+        [self fadeInInnerContainer];
+        
+        if( self.navigationController )
+        {
+            UIBarButtonItem *btn = [[UIBarButtonItem alloc] initWithTitle:@"Thumbnails" style:UIBarButtonItemStyleBordered target:self action:@selector(handleSeeAllTouch:)];
+            [self.navigationItem setRightBarButtonItem:btn animated:YES];
+        }
 	}
+    [self updateTitle];    
 }
 
 
@@ -723,17 +758,55 @@
 	[UIView commitAnimations];
 }
 
+- (void)fadeOutThumbView
+{
+	// do curl animation
+	[UIView beginAnimations:@"fadeOutThumb" context:nil];
+	[UIView setAnimationDuration:.666];
+	_thumbsView.alpha = 0.0;
+	[UIView commitAnimations];
+}
+
+
+- (void)fadeInThumbView
+{
+	// do curl animation
+	[UIView beginAnimations:@"fadeInThumb" context:nil];
+	[UIView setAnimationDuration:.666];
+    _thumbsView.alpha = 1.0;
+	[UIView commitAnimations];
+}
+
+- (void)fadeOutInnerContainer
+{
+	// do curl animation
+	[UIView beginAnimations:@"fadeOutInner" context:nil];
+	[UIView setAnimationDuration:.666];
+	_innerContainer.alpha = 0.0;
+	[UIView commitAnimations];
+}
+
+
+- (void)fadeInInnerContainer
+{
+	// do curl animation
+	[UIView beginAnimations:@"fadeInInner" context:nil];
+	[UIView setAnimationDuration:.666];
+    _innerContainer.alpha = 1.0;
+	[UIView commitAnimations];
+}
 
 
 - (void)handleThumbClick:(id)sender
 {
-	FGalleryPhotoView *photoView = (FGalleryPhotoView*)[(UIButton*)sender superview];
+    NSLog(@"Thumbs content offset top : %f", _thumbsView.contentOffset.y);
+    NSLog(@"Container view top : %f", _container.frame.origin.y);    
+    NSLog(@"Thumbs view top : %f", _thumbsView.frame.origin.y);
+	
+    FGalleryPhotoView *photoView = (FGalleryPhotoView*)[(UIButton*)sender superview];
 	[self toggleThumbView];
 	[self gotoImageByIndex:photoView.tag animated:NO];
 }
-
-
-
 
 #pragma mark - Image Loading
 
@@ -844,7 +917,7 @@
 
 - (void)unloadFullsizeImageWithIndex:(NSUInteger)index
 {
-	if( index >= 0 && index < [_photoViews count])
+	if(index < [_photoViews count])
 	{
 //		NSLog(@"unloadFullsizeImageWithIndex: %i", index);
 		
@@ -869,13 +942,13 @@
 	{
 		thumbPath = [_photoSource photoGallery:self filePathForPhotoSize:FGalleryPhotoSizeThumbnail atIndex:index];
 		fullsizePath = [_photoSource photoGallery:self filePathForPhotoSize:FGalleryPhotoSizeFullsize atIndex:index];
-		photo = [[[FGalleryPhoto alloc] initWithThumbnailPath:thumbPath fullsizePath:fullsizePath delegate:self] autorelease];
+		photo = [[FGalleryPhoto alloc] initWithThumbnailPath:thumbPath fullsizePath:fullsizePath delegate:self];
 	}
 	else if( sourceType == FGalleryPhotoSourceTypeNetwork )
 	{
 		thumbPath = [_photoSource photoGallery:self urlForPhotoSize:FGalleryPhotoSizeThumbnail atIndex:index];
 		fullsizePath = [_photoSource photoGallery:self urlForPhotoSize:FGalleryPhotoSizeFullsize atIndex:index];
-		photo = [[[FGalleryPhoto alloc] initWithThumbnailUrl:thumbPath fullsizeUrl:fullsizePath delegate:self] autorelease];
+		photo = [[FGalleryPhoto alloc] initWithThumbnailUrl:thumbPath fullsizeUrl:fullsizePath delegate:self];
 	}
 	else 
 	{
@@ -1085,54 +1158,39 @@
 	
 	[[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
 	
-	self.galleryID = nil;
 	
 	_photoSource = nil;
 	
-    [_caption release];
     _caption = nil;
 	
-    [_captionContainer release];
     _captionContainer = nil;
 	
-    [_container release];
     _container = nil;
 	
-    [_innerContainer release];
     _innerContainer = nil;
 	
-    [_toolbar release];
     _toolbar = nil;
 	
-    [_thumbsView release];
     _thumbsView = nil;
 	
-    [_scroller release];
     _scroller = nil;
 	
 	[_photoLoaders removeAllObjects];
-    [_photoLoaders release];
     _photoLoaders = nil;
 	
 	[_barItems removeAllObjects];
-	[_barItems release];
 	_barItems = nil;
 	
 	[_photoThumbnailViews removeAllObjects];
-    [_photoThumbnailViews release];
     _photoThumbnailViews = nil;
 	
 	[_photoViews removeAllObjects];
-    [_photoViews release];
     _photoViews = nil;
 	
-    [_nextButton release];
     _nextButton = nil;
 	
-    [_prevButton release];
     _prevButton = nil;
 	
-    [super dealloc];
 }
 
 

@@ -14,12 +14,12 @@
 //@interface FGalleryPhotoView : UIImageView {
 @interface FGalleryPhotoView : UIScrollView <UIScrollViewDelegate> {
 	
-	UIImageView *imageView;
-	UIActivityIndicatorView *_activity;
-	UIButton *_button;
+	UIImageView * imageView;
+	UIActivityIndicatorView * _activity;
+	UIButton * _button;
 	BOOL _isZoomed;
 	NSTimer *_tapTimer;
-	NSObject <FGalleryPhotoViewDelegate> *photoDelegate;
+	NSObject <FGalleryPhotoViewDelegate> *__unsafe_unretained photoDelegate;
 }
 
 - (void)killActivityIndicator;
@@ -29,10 +29,10 @@
 
 - (void)resetZoom;
 
-@property (nonatomic,assign) NSObject <FGalleryPhotoViewDelegate> *photoDelegate;
-@property (nonatomic,readonly) UIImageView *imageView;
-@property (nonatomic,readonly) UIButton *button;
-@property (nonatomic,readonly) UIActivityIndicatorView *activity;
+@property (nonatomic,unsafe_unretained) NSObject <FGalleryPhotoViewDelegate> *photoDelegate;
+@property (strong, nonatomic,readonly) UIImageView *imageView;
+@property (strong, nonatomic,readonly) UIButton *button;
+@property (strong, nonatomic,readonly) UIActivityIndicatorView *activity;
 
 @end
 

@@ -50,9 +50,9 @@ typedef enum
 	
 	UIView *_innerContainer; // sized and placed to be fullscreen within the container
 	
-	UIToolbar *_toolbar;
+	UIToolbar * _toolbar;
 	
-	UIScrollView *_thumbsView;
+	UIScrollView * _thumbsView;
 	
 	UIScrollView *_scroller;
 	
@@ -68,11 +68,14 @@ typedef enum
 	
 	NSMutableArray *_photoViews;
 	
-	NSObject <FGalleryViewControllerDelegate> *_photoSource;
+	NSObject <FGalleryViewControllerDelegate> *__unsafe_unretained _photoSource;
 	
 	UIBarButtonItem *_nextButton;
 	
 	UIBarButtonItem *_prevButton;
+    
+    BOOL _origNavigationBarTranslucent;
+    UIColor * _origNavigationBarTintColor;
 }
 
 - (id)initWithPhotoSource:(NSObject<FGalleryViewControllerDelegate>*)photoSrc;
@@ -85,11 +88,11 @@ typedef enum
 - (void)previous;
 - (void)gotoImageByIndex:(NSUInteger)index animated:(BOOL)animated;
 
-@property (nonatomic,assign) NSObject<FGalleryViewControllerDelegate> *photoSource;
-@property (nonatomic,readonly) UIToolbar *toolBar;
-@property (nonatomic,readonly) UIView* thumbsView;
+@property (nonatomic,unsafe_unretained) NSObject<FGalleryViewControllerDelegate> *photoSource;
+@property (nonatomic,strong, readonly) UIToolbar *toolBar;
+@property (nonatomic,strong, readonly) UIView* thumbsView;
 @property NSInteger currentIndex;
-@property (nonatomic,retain) NSString *galleryID;
+@property (nonatomic,strong) NSString *galleryID;
 
 @end
 

@@ -31,10 +31,10 @@
 	NSString *_thumbUrl;
 	NSString *_fullsizeUrl;
 	
-	UIImage *_thumbnail;
-	UIImage *_fullsize;
+	UIImage * _thumbnail;
+	UIImage * _fullsize;
 	
-	NSObject <FGalleryPhotoDelegate> *_delegate;
+	NSObject <FGalleryPhotoDelegate> *__unsafe_unretained _delegate;
 	
 	NSUInteger tag;
 }
@@ -57,10 +57,10 @@
 @property (readonly) BOOL isFullsizeLoading;
 @property (readonly) BOOL hasFullsizeLoaded;
 
-@property (nonatomic,readonly) UIImage *thumbnail;
-@property (nonatomic,readonly) UIImage *fullsize;
+@property (strong, nonatomic,readonly) UIImage *thumbnail;
+@property (strong, nonatomic,readonly) UIImage *fullsize;
 
-@property (nonatomic,assign) NSObject<FGalleryPhotoDelegate> *delegate;
+@property (nonatomic,unsafe_unretained) NSObject<FGalleryPhotoDelegate> *delegate;
 
 @end
 

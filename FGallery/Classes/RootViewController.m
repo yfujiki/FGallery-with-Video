@@ -19,11 +19,49 @@
     
 	self.title = @"FGallery";
     
-	localCaptions = [[NSArray alloc] initWithObjects:@"Lava", @"Hawaii", @"Audi", @"Happy New Year!",@"Frosty Web",nil];
+	localCaptions = [[NSArray alloc] initWithObjects:@"Lava", @"Hawaii", @"Audi",nil];
     localImages = [[NSArray alloc] initWithObjects: @"lava.jpeg", @"hawaii.jpeg", @"audi.jpg",nil];
     
-    networkCaptions = [[NSArray alloc] initWithObjects:@"Happy New Year!",@"Frosty Web",nil];
-    networkImages = [[NSArray alloc] initWithObjects:@"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg", @"Audi", @"Happy New Year!",@"Frosty Web",nil];
+    networkCaptions = [[NSArray alloc] initWithObjects:
+                       @"Happy New Year!", @"Frosty Web", 
+                       @"Happy New Year!", @"Frosty Web", 
+                       @"Happy New Year!", @"Frosty Web", 
+                       @"Happy New Year!", @"Frosty Web", 
+                       @"Happy New Year!", @"Frosty Web", 
+                       @"Happy New Year!", @"Frosty Web",                        
+                       @"Happy New Year!", @"Frosty Web",                        
+                       @"Happy New Year!", @"Frosty Web",                        
+                       @"Happy New Year!", @"Frosty Web",                                               
+                       @"Happy New Year!", @"Frosty Web",                        
+                       @"Happy New Year!", @"Frosty Web",                        
+                       @"Happy New Year!", @"Frosty Web",                                               
+                       nil];
+    networkImages = [[NSArray alloc] initWithObjects:
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
+                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
+                     nil];
 }
 
 #pragma mark - Table view data source
@@ -47,7 +85,7 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
-        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
     }
     
 	// Configure the cell.
@@ -131,23 +169,20 @@
 	if( indexPath.row == 0 ) {
 		localGallery = [[FGalleryViewController alloc] initWithPhotoSource:self];
         [self.navigationController pushViewController:localGallery animated:YES];
-        [localGallery release];
 	}
     else if( indexPath.row == 1 ) {
 		networkGallery = [[FGalleryViewController alloc] initWithPhotoSource:self];
         [self.navigationController pushViewController:networkGallery animated:YES];
-        [networkGallery release];        
     }
 	else if( indexPath.row == 2 ) {
 		UIImage *trashIcon = [UIImage imageNamed:@"photo-gallery-trashcan.png"];
 		UIImage *captionIcon = [UIImage imageNamed:@"photo-gallery-edit-caption.png"];
-		UIBarButtonItem *trashButton = [[[UIBarButtonItem alloc] initWithImage:trashIcon style:UIBarButtonItemStylePlain target:self action:@selector(handleTrashButtonTouch:)] autorelease];
-		UIBarButtonItem *editCaptionButton = [[[UIBarButtonItem alloc] initWithImage:captionIcon style:UIBarButtonItemStylePlain target:self action:@selector(handleEditCaptionButtonTouch:)] autorelease];
+		UIBarButtonItem *trashButton = [[UIBarButtonItem alloc] initWithImage:trashIcon style:UIBarButtonItemStylePlain target:self action:@selector(handleTrashButtonTouch:)];
+		UIBarButtonItem *editCaptionButton = [[UIBarButtonItem alloc] initWithImage:captionIcon style:UIBarButtonItemStylePlain target:self action:@selector(handleEditCaptionButtonTouch:)];
 		NSArray *barItems = [NSArray arrayWithObjects:editCaptionButton, trashButton, nil];
 		
 		localGallery = [[FGalleryViewController alloc] initWithPhotoSource:self barItems:barItems];
         [self.navigationController pushViewController:localGallery animated:YES];
-        [localGallery release];
 	}
 }
 
@@ -167,9 +202,6 @@
 }
 
 
-- (void)dealloc {
-    [super dealloc];
-}
 
 
 @end
