@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "FGalleryMedia.h"
 
-@interface FGalleryPhoto : FGalleryMedia {	
+@interface FGalleryVideo : FGalleryMedia {
 }
 @end
+

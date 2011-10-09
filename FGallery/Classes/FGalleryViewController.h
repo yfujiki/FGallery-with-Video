@@ -9,24 +9,24 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 #import "FGalleryPhotoView.h"
-#import "FGalleryPhoto.h"
-
-
-typedef enum
-{
-	FGalleryPhotoSizeThumbnail,
-	FGalleryPhotoSizeFullsize
-} FGalleryPhotoSize;
+#import "FGalleryMedia.h"
+#import "FGalleryMoviePlayerController.h"
 
 typedef enum
 {
-	FGalleryPhotoSourceTypeNetwork,
-	FGalleryPhotoSourceTypeLocal
-} FGalleryPhotoSourceType;
+	FGalleryMediaSizeThumbnail,
+	FGalleryMediaSizeFullsize
+} FGalleryMediaSize;
+
+typedef enum
+{
+	FGalleryMediaSourceTypeNetwork,
+	FGalleryMediaSourceTypeLocal
+} FGalleryMediaSourceType;
 
 @protocol FGalleryViewControllerDelegate;
 
-@interface FGalleryViewController : UIViewController <UIScrollViewDelegate,FGalleryPhotoDelegate,FGalleryPhotoViewDelegate> {
+@interface FGalleryViewController : UIViewController <UIScrollViewDelegate,FGalleryMediaDelegate,FGalleryPhotoViewDelegate> {
 	
 	UIStatusBarStyle _prevStatusStyle;
 	
@@ -68,7 +68,7 @@ typedef enum
 	
 	NSMutableArray *_photoViews;
 	
-	NSObject <FGalleryViewControllerDelegate> *__unsafe_unretained _photoSource;
+	NSObject <FGalleryViewControllerDelegate> *__unsafe_unretained _mediaSource;
 	
 	UIBarButtonItem *_nextButton;
 	
@@ -76,10 +76,12 @@ typedef enum
     
     BOOL _origNavigationBarTranslucent;
     UIColor * _origNavigationBarTintColor;
+    
+    FGalleryMoviePlayerController *_videoPlayer;
 }
 
-- (id)initWithPhotoSource:(NSObject<FGalleryViewControllerDelegate>*)photoSrc;
-- (id)initWithPhotoSource:(NSObject<FGalleryViewControllerDelegate>*)photoSrc barItems:(NSArray*)items;
+- (id)initWithMediaSource:(NSObject<FGalleryViewControllerDelegate>*)photoSrc;
+- (id)initWithMediaSource:(NSObject<FGalleryViewControllerDelegate>*)photoSrc barItems:(NSArray*)items;
 
 
 - (void)removeImageAtIndex:(NSUInteger)index;
@@ -88,7 +90,7 @@ typedef enum
 - (void)previous;
 - (void)gotoImageByIndex:(NSUInteger)index animated:(BOOL)animated;
 
-@property (nonatomic,unsafe_unretained) NSObject<FGalleryViewControllerDelegate> *photoSource;
+@property (nonatomic,unsafe_unretained) NSObject<FGalleryViewControllerDelegate> *mediaSource;
 @property (nonatomic,strong, readonly) UIToolbar *toolBar;
 @property (nonatomic,strong, readonly) UIView* thumbsView;
 @property NSInteger currentIndex;
@@ -101,14 +103,15 @@ typedef enum
 @protocol FGalleryViewControllerDelegate
 
 @required
-- (int)numberOfPhotosForPhotoGallery:(FGalleryViewController*)gallery;
-- (FGalleryPhotoSourceType)photoGallery:(FGalleryViewController*)gallery sourceTypeForPhotoAtIndex:(NSUInteger)index;
+- (int)numberOfMediasForGallery:(FGalleryViewController*)gallery;
+- (FGalleryMediaSourceType)mediaGallery:(FGalleryViewController*)gallery sourceTypeForMediaAtIndex:(NSUInteger)index;
+- (FGalleryMediaType)mediaGallery:(FGalleryViewController*)gallery mediaTypeForMediaAtIndex:(NSUInteger)index;
 
 @optional
-- (NSString*)photoGallery:(FGalleryViewController*)gallery captionForPhotoAtIndex:(NSUInteger)index;
+- (NSString*)mediaGallery:(FGalleryViewController*)gallery captionForMediaAtIndex:(NSUInteger)index;
 
-// the photosource must implement one of these methods depending on which FGalleryPhotoSourceType is specified 
-- (NSString*)photoGallery:(FGalleryViewController*)gallery filePathForPhotoSize:(FGalleryPhotoSize)size atIndex:(NSUInteger)index;
-- (NSString*)photoGallery:(FGalleryViewController*)gallery urlForPhotoSize:(FGalleryPhotoSize)size atIndex:(NSUInteger)index;
+// the MediaSource must implement one of these methods depending on which FGalleryMediaSourceType is specified 
+- (NSString*)mediaGallery:(FGalleryViewController*)gallery filePathForMediaSize:(FGalleryMediaSize)size atIndex:(NSUInteger)index;
+- (NSString*)mediaGallery:(FGalleryViewController*)gallery urlForMediaSize:(FGalleryMediaSize)size atIndex:(NSUInteger)index;
 
 @end

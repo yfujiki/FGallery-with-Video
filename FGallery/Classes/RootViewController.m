@@ -7,7 +7,7 @@
 //
 
 #import "RootViewController.h"
-
+#import "MediaObject.h"
 
 @implementation RootViewController
 
@@ -18,50 +18,18 @@
 	[super loadView];
     
 	self.title = @"FGallery";
+    localMediaObjects = [[NSArray alloc] initWithObjects:
+        [[MediaObject alloc] initWithCaption:@"Lava" url:@"lava.jpeg" thumbnailUrl:@"lava.jpeg" type:FGalleryMediaTypeImage],
+        [[MediaObject alloc] initWithCaption:@"Hawaii" url:@"hawaii.jpeg" thumbnailUrl:@"hawaii.jpeg" type:FGalleryMediaTypeImage],
+        [[MediaObject alloc] initWithCaption:@"Dog Video" url:@"haku.mov" thumbnailUrl:@"haku.png" type:FGalleryMediaTypeVideo],                         
+        [[MediaObject alloc] initWithCaption:@"Audi" url:@"audi.jpg" thumbnailUrl:@"audi.jpg" type:FGalleryMediaTypeImage],
+    nil];
     
-	localCaptions = [[NSArray alloc] initWithObjects:@"Lava", @"Hawaii", @"Audi",nil];
-    localImages = [[NSArray alloc] initWithObjects: @"lava.jpeg", @"hawaii.jpeg", @"audi.jpg",nil];
-    
-    networkCaptions = [[NSArray alloc] initWithObjects:
-                       @"Happy New Year!", @"Frosty Web", 
-                       @"Happy New Year!", @"Frosty Web", 
-                       @"Happy New Year!", @"Frosty Web", 
-                       @"Happy New Year!", @"Frosty Web", 
-                       @"Happy New Year!", @"Frosty Web", 
-                       @"Happy New Year!", @"Frosty Web",                        
-                       @"Happy New Year!", @"Frosty Web",                        
-                       @"Happy New Year!", @"Frosty Web",                        
-                       @"Happy New Year!", @"Frosty Web",                                               
-                       @"Happy New Year!", @"Frosty Web",                        
-                       @"Happy New Year!", @"Frosty Web",                        
-                       @"Happy New Year!", @"Frosty Web",                                               
-                       nil];
-    networkImages = [[NSArray alloc] initWithObjects:
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     @"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg", 
-                     @"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg",
-                     nil];
+    networkMediaObjects = [[NSArray alloc] initWithObjects:
+        [[MediaObject alloc] initWithCaption:@"Happy New Year!" url:@"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg" thumbnailUrl:@"http://farm6.static.flickr.com/5042/5323996646_9c11e1b2f6_b.jpg" type:FGalleryMediaTypeImage], 
+        [[MediaObject alloc] initWithCaption:@"Frosty Web" url:@"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg" thumbnailUrl:@"http://farm6.static.flickr.com/5007/5311573633_3cae940638.jpg" type:FGalleryMediaTypeImage],        
+        [[MediaObject alloc] initWithCaption:@"Dog video" url:@"https://s3.amazonaws.com/houston_city_dev/video/h264-original/1/haku.mp4" thumbnailUrl:@"https://s3.amazonaws.com/houston_city_dev/video/h264-original/1/thumb/frame_0000.png" type:FGalleryMediaTypeVideo],                           
+    nil];
 }
 
 #pragma mark - Table view data source
@@ -106,47 +74,76 @@
 #pragma mark - FGalleryViewControllerDelegate Methods
 
 
-- (int)numberOfPhotosForPhotoGallery:(FGalleryViewController *)gallery
+- (int)numberOfMediasForGallery:(FGalleryViewController *)gallery
 {
-    int num;
+    int num = 0;
     if( gallery == localGallery ) {
-        num = [localImages count];
+        num = [localMediaObjects count];
     }
     else if( gallery == networkGallery ) {
-        num = [networkImages count];
+        num = [networkMediaObjects count];
     }
 	return num;
 }
 
 
-- (FGalleryPhotoSourceType)photoGallery:(FGalleryViewController *)gallery sourceTypeForPhotoAtIndex:(NSUInteger)index
+- (FGalleryMediaSourceType)mediaGallery:(FGalleryViewController *)gallery sourceTypeForMediaAtIndex:(NSUInteger)index
 {
 	if( gallery == localGallery ) {
-		return FGalleryPhotoSourceTypeLocal;
+		return FGalleryMediaSourceTypeLocal;
 	}
-	else return FGalleryPhotoSourceTypeNetwork;
+	else return FGalleryMediaSourceTypeNetwork;
+}
+
+- (FGalleryMediaType)mediaGallery:(FGalleryViewController *)gallery mediaTypeForMediaAtIndex:(NSUInteger)index
+{
+    FGalleryMediaType type;
+	if( gallery == localGallery ) 
+    {
+        type = [(MediaObject *)[localMediaObjects objectAtIndex:index] type];
+	}
+	else
+    {
+        type = [(MediaObject *)[networkMediaObjects objectAtIndex:index] type];        
+    }
+    return type;
 }
 
 
-- (NSString*)photoGallery:(FGalleryViewController *)gallery captionForPhotoAtIndex:(NSUInteger)index
+- (NSString*)mediaGallery:(FGalleryViewController *)gallery captionForMediaAtIndex:(NSUInteger)index
 {
     NSString *caption;
     if( gallery == localGallery ) {
-        caption = [localCaptions objectAtIndex:index];
+        caption = [(MediaObject *)[localMediaObjects objectAtIndex:index] caption];
     }
     else if( gallery == networkGallery ) {
-        caption = [networkCaptions objectAtIndex:index];
+        caption = [(MediaObject *)[networkMediaObjects objectAtIndex:index] caption];
     }
 	return caption;
 }
 
 
-- (NSString*)photoGallery:(FGalleryViewController*)gallery filePathForPhotoSize:(FGalleryPhotoSize)size atIndex:(NSUInteger)index {
-    return [localImages objectAtIndex:index];
+- (NSString*)mediaGallery:(FGalleryViewController*)gallery filePathForMediaSize:(FGalleryMediaSize)size atIndex:(NSUInteger)index {
+    switch (size) {
+        case FGalleryMediaSizeThumbnail:
+            return [(MediaObject *)[localMediaObjects objectAtIndex:index] thumbnailUrl];
+            break;            
+        default:
+            return [(MediaObject *)[localMediaObjects objectAtIndex:index] url];
+            break;
+    }
+
 }
 
-- (NSString*)photoGallery:(FGalleryViewController *)gallery urlForPhotoSize:(FGalleryPhotoSize)size atIndex:(NSUInteger)index {
-    return [networkImages objectAtIndex:index];
+- (NSString*)mediaGallery:(FGalleryViewController *)gallery urlForMediaSize:(FGalleryMediaSize)size atIndex:(NSUInteger)index {
+    switch (size) {
+        case FGalleryMediaSizeThumbnail:
+            return [(MediaObject *)[networkMediaObjects objectAtIndex:index] thumbnailUrl];
+            break;            
+        default:
+            return [(MediaObject *)[networkMediaObjects objectAtIndex:index] url];
+            break;
+    }
 }
 
 - (void)handleTrashButtonTouch:(id)sender {
@@ -167,11 +164,11 @@
     imageCount = 5;
     
 	if( indexPath.row == 0 ) {
-		localGallery = [[FGalleryViewController alloc] initWithPhotoSource:self];
+		localGallery = [[FGalleryViewController alloc] initWithMediaSource:self];
         [self.navigationController pushViewController:localGallery animated:YES];
 	}
     else if( indexPath.row == 1 ) {
-		networkGallery = [[FGalleryViewController alloc] initWithPhotoSource:self];
+		networkGallery = [[FGalleryViewController alloc] initWithMediaSource:self];
         [self.navigationController pushViewController:networkGallery animated:YES];
     }
 	else if( indexPath.row == 2 ) {
@@ -181,7 +178,7 @@
 		UIBarButtonItem *editCaptionButton = [[UIBarButtonItem alloc] initWithImage:captionIcon style:UIBarButtonItemStylePlain target:self action:@selector(handleEditCaptionButtonTouch:)];
 		NSArray *barItems = [NSArray arrayWithObjects:editCaptionButton, trashButton, nil];
 		
-		localGallery = [[FGalleryViewController alloc] initWithPhotoSource:self barItems:barItems];
+		localGallery = [[FGalleryViewController alloc] initWithMediaSource:self barItems:barItems];
         [self.navigationController pushViewController:localGallery animated:YES];
 	}
 }

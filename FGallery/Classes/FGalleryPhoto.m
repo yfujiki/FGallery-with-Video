@@ -32,103 +32,6 @@
 
 
 @implementation FGalleryPhoto
-@synthesize tag;
-@synthesize thumbnail = _thumbnail;
-@synthesize fullsize = _fullsize;
-@synthesize delegate = _delegate;
-@synthesize isFullsizeLoading = _isFullsizeLoading;
-@synthesize hasFullsizeLoaded = _hasFullsizeLoaded;
-@synthesize isThumbLoading = _isThumbLoading;
-@synthesize hasThumbLoaded = _hasThumbLoaded;
-
-
-- (id)initWithThumbnailUrl:(NSString*)thumb fullsizeUrl:(NSString*)fullsize delegate:(NSObject<FGalleryPhotoDelegate>*)delegate
-{
-	self = [super init];
-	_useNetwork = YES;
-	_thumbUrl = thumb;
-	_fullsizeUrl = fullsize;
-	_delegate = delegate;
-	return self;
-}
-
-- (id)initWithThumbnailPath:(NSString*)thumb fullsizePath:(NSString*)fullsize delegate:(NSObject<FGalleryPhotoDelegate>*)delegate
-{
-	self = [super init];
-	
-	_useNetwork = NO;
-	_thumbUrl = thumb;
-	_fullsizeUrl = fullsize;
-	_delegate = delegate;
-	return self;
-}
-
-
-- (void)loadThumbnail
-{
-	if( _isThumbLoading || _hasThumbLoaded ) return;
-	
-	// load from network
-	if( _useNetwork )
-	{
-		// notify delegate
-		[self willLoadThumbFromUrl];
-		
-		_isThumbLoading = YES;
-		
-//		NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:_thumbUrl]];
-//		_thumbConnection = [NSURLConnection connectionWithRequest:request delegate:self];
-//		_thumbData = [[NSMutableData alloc] init];
-        
-        if(![[Reachability reachabilityForInternetConnection] isReachable])
-        {
-            NSData * responseData = [[ASIDownloadCache sharedCache] cachedResponseDataForURL:[NSURL URLWithString:_thumbUrl]];
-            _thumbnail = [UIImage imageWithData:responseData];    
-            _isThumbLoading = NO;
-            _hasThumbLoaded = YES;
-            
-            if(_delegate)
-                [self didLoadThumbnail];
-            
-            return;
-        }
-        
-        __unsafe_unretained ASIHTTPRequest * request = [ASIHTTPRequest requestWithURL:[NSURL URLWithString:_thumbUrl]];
-        
-        [request setDownloadCache:[ASIDownloadCache sharedCache]];
-        [request setCachePolicy:ASIOnlyLoadIfNotCachedCachePolicy];
-        
-        [request setCompletionBlock:^{
-            NSData * responseData = [request responseData];
-            _thumbnail = [UIImage imageWithData:responseData];
-            _isThumbLoading = NO;
-            _hasThumbLoaded = YES;
-            
-            // notify delegate
-            if( _delegate ) 
-            	[self didLoadThumbnail];
-        }];
-        [request setFailedBlock:^{
-            NSLog(@"Failed to load thumbnail image : %@", [request.error localizedDescription]);
-            _isThumbLoading = NO;            
-        }];
-        
-        [request startAsynchronous];
-	}
-	
-	// load from disk
-	else {
-		
-		// notify delegate
-		[self willLoadThumbFromPath];
-		
-		_isThumbLoading = YES;
-		
-		// spawn a new thread to load from disk
-		[NSThread detachNewThreadSelector:@selector(loadThumbnailInThread) toTarget:self withObject:nil];
-	}
-}
-
 
 - (void)loadFullsize
 {
@@ -141,21 +44,18 @@
 		
 		_isFullsizeLoading = YES;
 		
-//		NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:_fullsizeUrl]];
-//		_fullsizeConnection = [NSURLConnection connectionWithRequest:request delegate:self];
-//		_fullsizeData = [[NSMutableData alloc] init];
-        if(![[Reachability reachabilityForInternetConnection] isReachable])
-        {
-            NSData * responseData = [[ASIDownloadCache sharedCache] cachedResponseDataForURL:[NSURL URLWithString:_fullsizeUrl]];
-            _fullsize = [UIImage imageWithData:responseData];        
-            _isFullsizeLoading = NO;
-            _hasFullsizeLoaded = YES;
-            
-            if(_delegate)
-                [self didLoadFullsize];
-            
-            return;
-        }
+//        if(![[Reachability reachabilityForInternetConnection] isReachable])
+//        {
+//            NSData * responseData = [[ASIDownloadCache sharedCache] cachedResponseDataForURL:[NSURL URLWithString:_fullsizeUrl]];
+//            _fullsize = [UIImage imageWithData:responseData];        
+//            _isFullsizeLoading = NO;
+//            _hasFullsizeLoaded = YES;
+//            
+//            if(_delegate)
+//                [self didLoadFullsize];
+//            
+//            return;
+//        }
         
         __unsafe_unretained ASIHTTPRequest * request = [ASIHTTPRequest requestWithURL:[NSURL URLWithString:_fullsizeUrl]];
         
@@ -164,13 +64,12 @@
         
         [request setCompletionBlock:^{
             NSData * responseData = [request responseData];
-            _fullsize = [UIImage imageWithData:responseData];
+            _fullsizeImage = [UIImage imageWithData:responseData];
             _isFullsizeLoading = NO;
             _hasFullsizeLoaded = YES;
             
             // notify delegate
-            if( _delegate ) 
-            	[self didLoadFullsize];
+           	[self didLoadFullsize];
         }];
         [request setFailedBlock:^{
             NSLog(@"Failed to load full size image : %@", [request.error localizedDescription]);
@@ -197,7 +96,7 @@
 	@autoreleasepool {
 	
 		NSString *path = [NSString stringWithFormat:@"%@/%@", [[NSBundle mainBundle] bundlePath], _fullsizeUrl];
-		_fullsize = [UIImage imageWithContentsOfFile:path];
+		_fullsizeImage = [UIImage imageWithContentsOfFile:path];
 		
 		_hasFullsizeLoaded = YES;
 		_isFullsizeLoading = NO;
@@ -205,137 +104,6 @@
 		[self performSelectorOnMainThread:@selector(didLoadFullsize) withObject:nil waitUntilDone:YES];
 	
 	}
-}
-
-
-- (void)loadThumbnailInThread
-{
-	@autoreleasepool {
-	
-		NSString *path = [NSString stringWithFormat:@"%@/%@", [[NSBundle mainBundle] bundlePath], _thumbUrl];
-		_thumbnail = [UIImage imageWithContentsOfFile:path];
-		
-		_hasThumbLoaded = YES;
-		_isThumbLoading = NO;
-		
-		[self performSelectorOnMainThread:@selector(didLoadThumbnail) withObject:nil waitUntilDone:YES];
-	
-	}
-}
-
-
-- (void)unloadFullsize
-{
-	[_fullsizeConnection cancel];
-	[self killFullsizeLoadObjects];
-	
-	_isFullsizeLoading = NO;
-	_hasFullsizeLoaded = NO;
-	
-	_fullsize = nil;
-}
-
-- (void)unloadThumbnail
-{
-	[_thumbConnection cancel];
-	[self killThumbnailLoadObjects];
-	
-	_isThumbLoading = NO;
-	_hasThumbLoaded = NO;
-	
-	_thumbnail = nil;
-}
-
-#pragma mark -
-#pragma mark Delegate Notification Methods
-
-
-- (void)willLoadThumbFromUrl
-{
-	if([_delegate respondsToSelector:@selector(galleryPhoto:willLoadThumbnailFromUrl:)])
-		[_delegate galleryPhoto:self willLoadThumbnailFromUrl:_thumbUrl];
-}
-
-
-- (void)willLoadFullsizeFromUrl
-{
-	if([_delegate respondsToSelector:@selector(galleryPhoto:willLoadFullsizeFromUrl:)])
-		[_delegate galleryPhoto:self willLoadFullsizeFromUrl:_fullsizeUrl];
-}
-
-
-- (void)willLoadThumbFromPath
-{
-	if([_delegate respondsToSelector:@selector(galleryPhoto:willLoadThumbnailFromPath:)])
-		[_delegate galleryPhoto:self willLoadThumbnailFromPath:_thumbUrl];
-}
-
-
-- (void)willLoadFullsizeFromPath
-{
-	if([_delegate respondsToSelector:@selector(galleryPhoto:willLoadFullsizeFromPath:)])
-		[_delegate galleryPhoto:self willLoadFullsizeFromPath:_fullsizeUrl];
-}
-
-
-- (void)didLoadThumbnail
-{
-//	FLog(@"gallery phooto did load thumbnail!");
-	if([_delegate respondsToSelector:@selector(galleryPhoto:didLoadThumbnail:)])
-		[_delegate galleryPhoto:self didLoadThumbnail:_thumbnail];
-}
-
-
-- (void)didLoadFullsize
-{
-//	FLog(@"gallery phooto did load fullsize!");
-	if([_delegate respondsToSelector:@selector(galleryPhoto:didLoadFullsize:)])
-		[_delegate galleryPhoto:self didLoadFullsize:_fullsize];
-}
-
-
-#pragma mark -
-#pragma mark Memory Management
-
-
-- (void)killThumbnailLoadObjects
-{
-	
-	_thumbConnection = nil;
-	_thumbData = nil;
-}
-
-
-
-- (void)killFullsizeLoadObjects
-{
-	
-	_fullsizeConnection = nil;
-	_fullsizeData = nil;
-}
-
-
-
-- (void)dealloc
-{
-//	NSLog(@"FGalleryPhoto dealloc");
-	
-//	[_delegate release];
-	_delegate = nil;
-	
-	[_fullsizeConnection cancel];
-	[_thumbConnection cancel];
-	[self killFullsizeLoadObjects];
-	[self killThumbnailLoadObjects];
-	
-	_thumbUrl = nil;
-	
-	_fullsizeUrl = nil;
-	
-	_thumbnail = nil;
-	
-	_fullsize = nil;
-	
 }
 
 
