@@ -3,7 +3,7 @@
 //  FGallery
 //
 //  Created by Yuichi Fujiki on 10/7/11.
-//  Copyright (c) 2011 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2011 Yuichi Fujiki. All rights reserved.
 //
 
 #import "FGalleryMoviePlayerController.h"

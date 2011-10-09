@@ -1,8 +1,8 @@
-    //
+//
 //  FGalleryViewController.m
 //  TNF_Trails
 //
-//  Created by Grant Davis on 5/19/10.
+//  Created by Grant Davis on 5/19/10. Modified by Yuichi Fujiki on 10/05/11.
 //  Copyright 2010 Factory Design Labs. All rights reserved.
 //
 //	TODO: Fade out toolbar on image tap
