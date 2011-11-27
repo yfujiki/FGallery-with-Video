@@ -9,8 +9,9 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 #import "FGalleryPhotoView.h"
+#import "FGalleryVideoView.h"
 #import "FGalleryMedia.h"
-#import "FGalleryMoviePlayerController.h"
+// #import "FGalleryMoviePlayerController.h"
 
 typedef enum
 {
@@ -26,7 +27,7 @@ typedef enum
 
 @protocol FGalleryViewControllerDelegate;
 
-@interface FGalleryViewController : UIViewController <UIScrollViewDelegate,FGalleryMediaDelegate,FGalleryPhotoViewDelegate> {
+@interface FGalleryViewController : UIViewController <UIScrollViewDelegate,FGalleryMediaDelegate,FGalleryPhotoViewDelegate, FGalleryVideoViewDelegate> {
 	
 	UIStatusBarStyle _prevStatusStyle;
 	
@@ -60,13 +61,13 @@ typedef enum
 	
 	UILabel *_caption;
 	
-	NSMutableDictionary *_photoLoaders;
+	NSMutableDictionary *_mediaLoaders;
 	
 	NSMutableArray *_barItems;
 	
-	NSMutableArray *_photoThumbnailViews;
-	
-	NSMutableArray *_photoViews;
+	NSMutableDictionary *_photoThumbnailViews;	
+	NSMutableDictionary *_photoViews;    
+    NSMutableDictionary *_videoViews;
 	
 	NSObject <FGalleryViewControllerDelegate> *__unsafe_unretained _mediaSource;
 	
@@ -76,8 +77,6 @@ typedef enum
     
     BOOL _origNavigationBarTranslucent;
     UIColor * _origNavigationBarTintColor;
-    
-    FGalleryMoviePlayerController *_videoPlayer;
 }
 
 - (id)initWithMediaSource:(NSObject<FGalleryViewControllerDelegate>*)photoSrc;
@@ -88,7 +87,7 @@ typedef enum
 
 - (void)next;
 - (void)previous;
-- (void)gotoImageByIndex:(NSUInteger)index animated:(BOOL)animated;
+- (void)gotoMediaByIndex:(NSUInteger)index animated:(BOOL)animated;
 
 @property (nonatomic,unsafe_unretained) NSObject<FGalleryViewControllerDelegate> *mediaSource;
 @property (nonatomic,strong, readonly) UIToolbar *toolBar;

@@ -10,6 +10,7 @@
 //	TODO: Add rotation support
 
 #import "FGalleryViewController.h"
+#import "AVFoundation/AVFoundation.h"
 
 #define kThumbnailSize 75
 #define kThumbnailSpacing 4
@@ -29,7 +30,7 @@
 - (void)layoutButtons;
 - (void)updateScrollSize;
 - (void)updateCaption;
-- (void)resizeImageViewsWithRect:(CGRect)rect;
+- (void)resizeMediaViewsWithRect:(CGRect)rect;
 - (void)resetImageViewZoomLevels;
 
 - (void)enterFullscreen;
@@ -46,6 +47,8 @@
 - (void)toggleThumbView;
 - (void)buildThumbsViewPhotos;
 
+- (void)toggleFullScreen;
+
 - (void)arrangeThumbs;
 - (void)loadAllThumbViewPhotos;
 
@@ -58,7 +61,7 @@
 - (void)curlThumbView;
 - (void)uncurlThumbView;
 
-- (void)unloadFullsizeImageWithIndex:(NSUInteger)index;
+- (void)unloadFullsizeMediaWithIndex:(NSUInteger)index;
 
 - (void)scrollingHasEnded;
 
@@ -68,7 +71,7 @@
 - (FGalleryMedia*)createGalleryMediaForIndex:(NSUInteger)index;
 
 - (void)loadThumbnailImageWithIndex:(NSUInteger)index;
-- (void)loadFullsizeImageWithIndex:(NSUInteger)index;
+- (void)loadFullsizeMediaWithIndex:(NSUInteger)index;
 
 @end
 
@@ -96,9 +99,10 @@
 		
 		// create storage
 		_currentIndex						= 0;
-		_photoLoaders						= [[NSMutableDictionary alloc] init];
-		_photoViews							= [[NSMutableArray alloc] init];
-		_photoThumbnailViews				= [[NSMutableArray alloc] init];
+		_mediaLoaders						= [[NSMutableDictionary alloc] init];
+		_photoViews							= [[NSMutableDictionary alloc] init];
+        _videoViews                         = [[NSMutableDictionary alloc] init];
+		_photoThumbnailViews				= [[NSMutableDictionary alloc] init];
 		_barItems							= [[NSMutableArray alloc] init];
 		
 		// create public objects first so they're available for custom configuration right away. positioning comes later.
@@ -250,7 +254,7 @@
 	
 	// init with next on first run.
 	if( _currentIndex == -1 ) [self next];
-	else [self gotoImageByIndex:_currentIndex animated:NO];
+	else [self gotoMediaByIndex:_currentIndex animated:NO];
 }
 
 - (void)viewWillDisappear:(BOOL)animated
@@ -267,24 +271,30 @@
 }
 
 
-- (void)resizeImageViewsWithRect:(CGRect)rect
+- (void)resizeMediaViewsWithRect:(CGRect)rect
 {
-	// resize all the image views
-	NSUInteger i, count = [_photoViews count];
-	float dx = 0;
-	for (i = 0; i < count; i++) {
-		FGalleryPhotoView * photoView = [_photoViews objectAtIndex:i];
-		photoView.frame = CGRectMake(dx, 0, rect.size.width, rect.size.height );
-		dx += rect.size.width;
+    NSUInteger i, count = [_mediaSource numberOfMediasForGallery:self];
+	for (i = 0; i < count; i++) {        
+        float xoffset = i * rect.size.width;
+        if([_mediaSource mediaGallery:self mediaTypeForMediaAtIndex:i] == FGalleryMediaTypeImage)
+        {
+            FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:i]];
+            photoView.frame = CGRectMake(xoffset, 0, rect.size.width, rect.size.height );
+        }
+        else
+        {
+            FGalleryVideoView * videoView = [_videoViews objectForKey:[NSNumber numberWithUnsignedInteger:i]];
+            videoView.frame = CGRectMake(xoffset, 0, rect.size.width, rect.size.height );            
+        }
 	}
 }
 
 - (void)resetImageViewZoomLevels
 {
 	// resize all the image views
-	NSUInteger i, count = [_photoViews count];
-	for (i = 0; i < count; i++) {
-		FGalleryPhotoView * photoView = [_photoViews objectAtIndex:i];
+    uint i, count = _photoViews.count;
+    for (i = 0; i<count; i++) {
+        FGalleryPhotoView * photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:i]];
 		[photoView resetZoom];
 	}
 }
@@ -293,19 +303,21 @@
 - (void)removeImageAtIndex:(NSUInteger)index
 {
 	// remove the image and thumbnail at the specified index.
-	FGalleryPhotoView *imgView = [_photoViews objectAtIndex:index];
- 	FGalleryPhotoView *thumbView = [_photoThumbnailViews objectAtIndex:index];
-	FGalleryMedia *media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i",index]];
-	
+	FGalleryMedia *media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i",index]];	
 	[media unloadFullsize];
 	[media unloadThumbnail];
 	
+	FGalleryPhotoView *imgView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:index]];
+    FGalleryPhotoView *thumbView = [_photoThumbnailViews objectForKey:[NSNumber numberWithUnsignedInteger:index]];
+    FGalleryVideoView *videoView = [_videoViews objectForKey:[NSNumber numberWithUnsignedInteger:index]];    
 	[imgView removeFromSuperview];
 	[thumbView removeFromSuperview];
-	
-	[_photoViews removeObjectAtIndex:index];
-	[_photoThumbnailViews removeObjectAtIndex:index];
-	[_photoLoaders removeObjectForKey:[NSString stringWithFormat:@"%i",index]];
+	[videoView removeFromSuperview];
+    
+	[_photoViews removeObjectForKey:[NSNumber numberWithUnsignedInteger:index]];
+	[_photoThumbnailViews removeObjectForKey:[NSNumber numberWithUnsignedInteger:index]];
+    [_videoViews removeObjectForKey:[NSNumber numberWithUnsignedInteger:index]];
+	[_mediaLoaders removeObjectForKey:[NSString stringWithFormat:@"%i",index]];
 	
 	[self layoutViews];
 	[self updateButtons];
@@ -324,7 +336,7 @@
 		return;
 	}
 	
-	[self gotoImageByIndex:nextIndex animated:NO];
+	[self gotoMediaByIndex:nextIndex animated:NO];
 }
 
 
@@ -339,12 +351,12 @@
 //        return;
 //    }
     
-	[self gotoImageByIndex:prevIndex animated:NO];
+	[self gotoMediaByIndex:prevIndex animated:NO];
 }
 
 
 
-- (void)gotoImageByIndex:(NSUInteger)index animated:(BOOL)animated
+- (void)gotoMediaByIndex:(NSUInteger)index animated:(BOOL)animated
 {
 //	NSLog(@"gotoImageByIndex: %i, out of %i", index, [_mediaSource numberOfPhotosForPhotoGallery:self]);
 	
@@ -362,7 +374,7 @@
 	else {
 		
 		// clear the fullsize image in the old photo
-		[self unloadFullsizeImageWithIndex:_currentIndex];
+		[self unloadFullsizeMediaWithIndex:_currentIndex];
 		
 		_currentIndex = index;
 		[self moveScrollerToCurrentIndexWithAnimation:animated];
@@ -370,7 +382,7 @@
 		
 		if( !animated )	{
 			[self preloadThumbnailImages];
-			[self loadFullsizeImageWithIndex:index];
+			[self loadFullsizeMediaWithIndex:index];
 		}
 	}
 	[self updateButtons];
@@ -396,8 +408,8 @@
 	
 	[self updateCaption];
 	
-	[self resizeImageViewsWithRect:_scroller.frame];
-	
+	[self resizeMediaViewsWithRect:_scroller.frame];
+    
 	[self layoutButtons];
 	
     [self loadAllThumbViewPhotos];
@@ -414,10 +426,10 @@
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-	if([keyPath isEqualToString:@"frame"]) 
-	{
-		[self layoutViews];
-	}
+    if([keyPath isEqualToString:@"frame"]) 
+    {
+        [self layoutViews];
+    }    
 }
 
 
@@ -528,10 +540,18 @@
 	[[UIApplication sharedApplication] beginIgnoringInteractionEvents];
 }
 
-
 - (void)didTapPhotoView:(FGalleryPhotoView*)photoView
 {
-	// don't change when scrolling
+    [self toggleFullScreen];
+}
+
+- (void)didTapVideoView:(FGalleryVideoView*)videoView
+{
+    [self toggleFullScreen];
+}
+
+- (void) toggleFullScreen {
+    // don't change when scrolling
 	if( _isScrolling || !_isActive ) return;
 	
 	// toggle fullscreen.
@@ -543,9 +563,7 @@
 		
 		[self exitFullscreen];
 	}
-
 }
-
 
 - (void)updateCaption
 {
@@ -644,12 +662,25 @@
 {
 	NSUInteger i, count = [_mediaSource numberOfMediasForGallery:self];
 	for (i = 0; i < count; i++) {
-		FGalleryPhotoView *photoView = [[FGalleryPhotoView alloc] initWithFrame:CGRectZero];
-		photoView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		photoView.autoresizesSubviews = YES;
-		photoView.photoDelegate = self;
-		[_scroller addSubview:photoView];
-		[_photoViews addObject:photoView];
+    
+        if([_mediaSource mediaGallery:self mediaTypeForMediaAtIndex:i] == FGalleryMediaTypeImage)
+        {
+            FGalleryPhotoView *photoView = [[FGalleryPhotoView alloc] initWithFrame:CGRectZero];
+            photoView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            photoView.autoresizesSubviews = YES;
+            photoView.photoDelegate = self;
+            [_scroller addSubview:photoView];
+            [_photoViews setObject:photoView forKey:[NSNumber numberWithUnsignedInteger:i]];
+        }
+        else
+        {
+            FGalleryVideoView * videoView = [[FGalleryVideoView alloc] initWithFrame:CGRectZero];
+            videoView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            videoView.autoresizesSubviews = YES;
+            videoView.videoDelegate = self;
+            [_scroller addSubview:videoView];
+            [_videoViews setObject:videoView forKey:[NSNumber numberWithUnsignedInteger:i]];            
+        }
 	}
 }
 
@@ -665,7 +696,7 @@
 		[thumbView setClipsToBounds:YES];
 		[thumbView setTag:i];
 		[_thumbsView addSubview:thumbView];
-		[_photoThumbnailViews addObject:thumbView];
+		[_photoThumbnailViews setObject:thumbView forKey:[NSNumber numberWithUnsignedInteger:i]];
 	}
 }
 
@@ -678,7 +709,7 @@
 	// loop through all thumbs to size and place them
 	NSUInteger i, count = [_photoThumbnailViews count];
 	for (i = 0; i < count; i++) {
-		FGalleryPhotoView *thumbView = [_photoThumbnailViews objectAtIndex:i];
+		FGalleryPhotoView *thumbView = [_photoThumbnailViews objectForKey:[NSNumber numberWithUnsignedInteger:i]];
 		// [thumbView setBackgroundColor:[UIColor grayColor]];
         [thumbView setBackgroundColor:[UIColor blackColor]];
 		
@@ -790,11 +821,6 @@
 	[UIView setAnimationDuration:.666];
 	_innerContainer.alpha = 0.0;
 	[UIView commitAnimations];
-    
-    if(!_videoPlayer.view.hidden)
-    {
-        [_videoPlayer.view setHidden:YES];
-    }
 }
 
 
@@ -816,7 +842,7 @@
 	
     FGalleryPhotoView *photoView = (FGalleryPhotoView*)[(UIButton*)sender superview];
 	[self toggleThumbView];
-	[self gotoImageByIndex:photoView.tag animated:NO];
+	[self gotoMediaByIndex:photoView.tag animated:NO];
 }
 
 #pragma mark - Image Loading
@@ -839,13 +865,13 @@
 	
 	
 	// check to see if the current image thumb has been loaded
-	media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
+	media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
 	
 	if( !media )
 	{
 //		NSLog(@"preloading current image thumbnail!");
 		[self loadThumbnailImageWithIndex:index];
-		media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
+		media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
 	}
 	else if( !media.hasThumbLoaded && !media.isThumbLoading )
 		[media loadThumbnail];
@@ -854,11 +880,11 @@
 	NSUInteger curIndex = prevIndex;
 	while( curIndex > -1 && curIndex > prevIndex - preloadCount )
 	{
-		media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
+		media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
 		
 		if( !media ) {
 			[self loadThumbnailImageWithIndex:curIndex];
-			media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
+			media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
 		}
 		
 		else if( !media.hasThumbLoaded && !media.isThumbLoading )
@@ -872,11 +898,11 @@
 	curIndex = nextIndex;
 	while( curIndex < count && curIndex < nextIndex + preloadCount )
 	{
-		media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
+		media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
 		
 		if( !media ) {
 			[self loadThumbnailImageWithIndex:curIndex];
-			media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
+			media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", curIndex]];
 		}
 		
 		else if( !media.hasThumbLoaded && !media.isThumbLoading )
@@ -901,7 +927,7 @@
 {
 //	NSLog(@"loadThumbnailImageWithIndex: %i", index );
 	
-	FGalleryMedia *media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
+	FGalleryMedia *media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
 	
 	if( media == nil )
 		media = [self createGalleryMediaForIndex:index];
@@ -911,11 +937,9 @@
 
 
 
-- (void)loadFullsizeImageWithIndex:(NSUInteger)index
+- (void)loadFullsizeMediaWithIndex:(NSUInteger)index
 {
-//	NSLog(@"loadFullsizeImageWithIndex: %i", index );
-	
-	FGalleryMedia *media = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
+	FGalleryMedia *media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
 	
 	if( media == nil )
 		media = [self createGalleryMediaForIndex:index];
@@ -925,18 +949,21 @@
 
 
 
-- (void)unloadFullsizeImageWithIndex:(NSUInteger)index
+- (void)unloadFullsizeMediaWithIndex:(NSUInteger)index
 {
-	if(index < [_photoViews count])
-	{
-//		NSLog(@"unloadFullsizeImageWithIndex: %i", index);
-		
-		FGalleryMedia * loader = [_photoLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
-		[loader unloadFullsize];
-		
-		FGalleryPhotoView *photoView = [_photoViews objectAtIndex:index];
-		photoView.imageView.image = loader.thumbnail;
-	}
+    FGalleryMedia * media = [_mediaLoaders objectForKey:[NSString stringWithFormat:@"%i", index]];
+    [media unloadFullsize];
+    
+    if([_mediaSource mediaGallery:self mediaTypeForMediaAtIndex:index] == FGalleryMediaTypeImage)
+    {
+        FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:index]];
+        photoView.imageView.image = media.thumbnail;        
+    }
+    else
+    {
+        FGalleryVideoView * videoView = [_videoViews objectForKey:[NSNumber numberWithUnsignedInteger:index]];
+        [videoView pause];
+    }
 }
 
 
@@ -968,13 +995,11 @@
 		[NSException raise:@"Invalid photo source type" format:@"The specified source type of %d is invalid", sourceType];
 	}
 	
-//	NSLog(@"Creating new gallery photo object for index: %i", index);
-	
 	// assign the photo index
 	media.tag = index;
 	
 	// store it
-	[_photoLoaders setObject:media forKey: [NSString stringWithFormat:@"%i", index]];
+	[_mediaLoaders setObject:media forKey: [NSString stringWithFormat:@"%i", index]];
 	
 	return media;
 }
@@ -991,13 +1016,13 @@
 		return;
 	
 	// clear previous
-	[self unloadFullsizeImageWithIndex:_currentIndex];
+	[self unloadFullsizeMediaWithIndex:_currentIndex];
 	
 	_currentIndex = newIndex;
 	[self updateCaption];
 	[self updateTitle];
 	[self updateButtons];
-	[self loadFullsizeImageWithIndex:_currentIndex];
+	[self loadFullsizeMediaWithIndex:_currentIndex];
 	[self preloadThumbnailImages];
 }
 
@@ -1008,12 +1033,12 @@
 - (void)galleryMedia:(FGalleryMedia*)media willLoadThumbnailFromPath:(NSString*)path
 {
 	// show activity indicator for large photo view
-	FGalleryPhotoView *photoView = [_photoViews objectAtIndex:media.tag];
+	FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
 	[photoView.activity startAnimating];
 	
 	// show activity indicator for thumbail 
 	if( _isThumbViewShowing ) {
-		FGalleryPhotoView *thumb = [_photoThumbnailViews objectAtIndex:media.tag];
+		FGalleryPhotoView *thumb = [_photoThumbnailViews objectForKey:[NSNumber numberWithInt:media.tag]];
 		[thumb.activity startAnimating];
 	}
 }
@@ -1031,12 +1056,12 @@
 //	NSLog(@"galleryPhoto:willLoadThumbnailFromUrl:");
 	
 	// show activity indicator for large photo view
-	FGalleryPhotoView *photoView = [_photoViews objectAtIndex:media.tag];
+	FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
 	[photoView.activity startAnimating];
 	
 	// show activity indicator for thumbail 
 	if( _isThumbViewShowing ) {
-		FGalleryPhotoView *thumb = [_photoThumbnailViews objectAtIndex:media.tag];
+		FGalleryPhotoView *thumb = [_photoThumbnailViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
 		[thumb.activity startAnimating];
 	}
 }
@@ -1053,7 +1078,7 @@
 - (void)galleryMedia:(FGalleryMedia *)media didLoadThumbnail:(UIImage*)image
 {
 	// grab the associated image view
-	FGalleryPhotoView *photoView = [_photoViews objectAtIndex:media.tag];
+	FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
 	
 	// if the gallery photo hasn't loaded the fullsize yet, set the thumbnail as its image.
 	if( !media.hasFullsizeLoaded )
@@ -1062,7 +1087,7 @@
 	[photoView.activity stopAnimating];
 	
 	// grab the thumbail view and set its image
-	FGalleryPhotoView *thumbView = [_photoThumbnailViews objectAtIndex:media.tag];
+	FGalleryPhotoView *thumbView = [_photoThumbnailViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
 	thumbView.imageView.image = image;
 	[thumbView.activity stopAnimating];
 }
@@ -1074,10 +1099,8 @@
 	// only set the fullsize image if we're currently on that image
 	if( _currentIndex == media.tag )
 	{
-		FGalleryPhotoView *photoView = [_photoViews objectAtIndex:media.tag];
+		FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
 		photoView.imageView.image = media.fullsizeImage;
-        
-        [_videoPlayer.view setHidden:YES];
 	}
 	// otherwise, we don't need to keep this image around
 	else [media unloadFullsize];
@@ -1089,32 +1112,38 @@
 	// only set the fullsize image if we're currently on that image
 	if( _currentIndex == media.tag )
 	{
-        if(!_videoPlayer)
-        {
-            _videoPlayer = [[FGalleryMoviePlayerController alloc] initWithContentURL:videoUrl parentController:self];
-            _videoPlayer.view.frame = _innerContainer.bounds;
-            [_innerContainer addSubview:_videoPlayer.view];    
-        }
-        else
-        {
-            _videoPlayer.contentURL = videoUrl;
-        }
+        FGalleryVideoView * videoView = [_videoViews objectForKey:[NSNumber numberWithUnsignedInteger:media.tag]];
         
-        [_videoPlayer.view setHidden:NO];
-        
-        [_videoPlayer standby];
+        if(!videoView.player) // Not loaded yet
+        {        
+            AVURLAsset * asset = [AVURLAsset URLAssetWithURL:videoUrl options:nil];
+            
+            NSError * error;
+            AVKeyValueStatus status = [asset statusOfValueForKey:@"track" error:&error];
+            
+            
+            if(status != AVKeyValueStatusLoaded) {
+                AVPlayerItem * playerItem = [AVPlayerItem playerItemWithAsset:asset];
+                [[NSNotificationCenter defaultCenter] addObserver:videoView
+                                                         selector:@selector(playerItemDidReachEnd:)
+                                                             name:AVPlayerItemDidPlayToEndTimeNotification
+                                                           object:playerItem];
+                
+                AVPlayer * player = [[AVPlayer alloc] initWithPlayerItem:playerItem];
+                [videoView setPlayer:player];        
+            }
+            else
+            {
+                NSLog(@"Asset loading failed : %@", [error localizedDescription]);
+            }
+        }
 	}
 	// otherwise, we don't need to keep this image around
 	else [media unloadFullsize];
 }
 
 
-
-
 #pragma mark - UIScrollView Methods
-
-
-
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView
 {
 	_isScrolling = YES;
@@ -1145,22 +1174,24 @@
 	
 	NSLog(@"[FGalleryViewController] didReceiveMemoryWarning! clearing out cached images...");
 	// unload fullsize and thumbnail images for all our images except at the current index.
-	NSArray *keys = [_photoLoaders allKeys];
+	NSArray *keys = [_mediaLoaders allKeys];
 	NSUInteger i, count = [keys count];
 	for (i = 0; i < count; i++) 
 	{
 		if( i != _currentIndex )
 		{
-			FGalleryMedia *media = [_photoLoaders objectForKey:[keys objectAtIndex:i]];
+			FGalleryMedia *media = [_mediaLoaders objectForKey:[keys objectAtIndex:i]];
 			[media unloadFullsize];
 			[media unloadThumbnail];
 			
-			// unload main image thumb
-			FGalleryPhotoView *photoView = [_photoViews objectAtIndex:i];
+			// unload main image
+			FGalleryPhotoView *photoView = [_photoViews objectForKey:[NSNumber numberWithUnsignedInteger:i]];
 			photoView.imageView.image = nil;
 			
+            // unload main video... not necessary.
+            
 			// unload thumb tile
-			photoView = [_photoThumbnailViews objectAtIndex:i];
+			photoView = [_photoThumbnailViews objectForKey:[NSNumber numberWithUnsignedInteger:i]];
 			photoView.imageView.image = nil;
 		}
 	}
@@ -1184,10 +1215,10 @@
 	[_container removeObserver:self forKeyPath:@"frame"];
 	
 	// Cancel all photo loaders in progress
-	NSArray *keys = [_photoLoaders allKeys];
+	NSArray *keys = [_mediaLoaders allKeys];
 	NSUInteger i, count = [keys count];
 	for (i = 0; i < count; i++) {
-		FGalleryMedia *media = [_photoLoaders objectForKey:[keys objectAtIndex:i]];
+		FGalleryMedia *media = [_mediaLoaders objectForKey:[keys objectAtIndex:i]];
 		media.delegate = nil;
 		[media unloadThumbnail];
 		[media unloadFullsize];
@@ -1197,23 +1228,16 @@
 	
 	
 	_mediaSource = nil;
-	
     _caption = nil;
-	
     _captionContainer = nil;
-	
     _container = nil;
-	
     _innerContainer = nil;
-	
     _toolbar = nil;
-	
     _thumbsView = nil;
-	
     _scroller = nil;
 	
-	[_photoLoaders removeAllObjects];
-    _photoLoaders = nil;
+	[_mediaLoaders removeAllObjects];
+    _mediaLoaders = nil;
 	
 	[_barItems removeAllObjects];
 	_barItems = nil;
@@ -1223,11 +1247,12 @@
 	
 	[_photoViews removeAllObjects];
     _photoViews = nil;
+    
+    [_videoViews removeAllObjects];
+    _videoViews = nil;
 	
     _nextButton = nil;
-	
     _prevButton = nil;
-	
 }
 
 
